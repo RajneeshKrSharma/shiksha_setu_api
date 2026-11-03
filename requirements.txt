@@ -1,0 +1,15 @@
+Django>=5.2,<5.3
+djangorestframework>=3.16
+djangorestframework-simplejwt>=5.5
+django-axes>=8.0
+python-dotenv>=1.0
+cryptography>=44.0
+django-cors-headers>=4.4
+# Production on MySQL (PythonAnywhere has this installed already):
+# mysqlclient
+# Production on Postgres (Railway):
+psycopg[binary]>=3.2
+# Web server and static files for Railway
+gunicorn>=23.0
+whitenoise>=6.7
+certifi>=2024.0

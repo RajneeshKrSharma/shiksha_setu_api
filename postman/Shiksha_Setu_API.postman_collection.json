@@ -1,0 +1,4183 @@
+{
+  "info": {
+    "name": "Shiksha Setu API",
+    "description": "Every endpoint of the Shiksha Setu backend.\n\n1. Start the server: python manage.py runserver\n2. Create the Principal once with python manage.py create_principal\n3. Run `1 Sign in and accounts > Login`. The token is saved and used by every request.\n\nRequests that create something save its id (class_id, student_id, teacher_id, exam_id ...), so the next request can use it. Dates like {{today}} are filled in for you. Greyed-out query parameters are optional: tick them to use them.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };",
+          "const set = (k, v) => pm.collectionVariables.set(k, v);",
+          "set('today', day(0)); set('plus_1', day(1)); set('plus_3', day(3)); set('plus_7', day(7));",
+          "set('plus_8', day(8)); set('plus_30', day(30)); set('minus_30', day(-30));",
+          "set('this_month', day(0).slice(0, 7));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refresh",
+      "value": ""
+    },
+    {
+      "key": "vp_id",
+      "value": ""
+    },
+    {
+      "key": "grant_id",
+      "value": ""
+    },
+    {
+      "key": "holiday_id",
+      "value": ""
+    },
+    {
+      "key": "notice_id",
+      "value": ""
+    },
+    {
+      "key": "class_id",
+      "value": ""
+    },
+    {
+      "key": "student_id",
+      "value": ""
+    },
+    {
+      "key": "item_id",
+      "value": ""
+    },
+    {
+      "key": "teacher_id",
+      "value": ""
+    },
+    {
+      "key": "allotment_id",
+      "value": ""
+    },
+    {
+      "key": "lesson_id",
+      "value": ""
+    },
+    {
+      "key": "staff_id",
+      "value": ""
+    },
+    {
+      "key": "van_id",
+      "value": ""
+    },
+    {
+      "key": "bill_id",
+      "value": ""
+    },
+    {
+      "key": "request_id",
+      "value": ""
+    },
+    {
+      "key": "exam_id",
+      "value": ""
+    },
+    {
+      "key": "unit_id",
+      "value": ""
+    },
+    {
+      "key": "question_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 Start here",
+      "description": "Run the server, then create the Principal once:\n\npython manage.py create_principal --email you@school.in --name \"Name\" --password '...'\n\nThen run `1 Sign in > Login`. It saves the tokens, and every other request uses them.",
+      "item": [
+        {
+          "name": "Health (is the server up)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                ""
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 Sign in and accounts",
+      "description": "",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login",
+                ""
+              ]
+            },
+            "description": "Saves `token` and `refresh`. To act as a teacher or staff member, log in with their email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"you@school.in\",\n  \"password\": \"YourPassword#1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.access !== undefined) pm.collectionVariables.set(\"token\", body.access);",
+                  "  if (body.refresh !== undefined) pm.collectionVariables.set(\"refresh\", body.refresh);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.access !== undefined) pm.collectionVariables.set(\"token\", body.access);",
+                  "  if (body.refresh !== undefined) pm.collectionVariables.set(\"refresh\", body.refresh);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (who am I, what may I do)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change my name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Name\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change my password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/change-password/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "change-password",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current\": \"OldPassword#1\",\n  \"new\": \"NewPassword#2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Permissions the Principal can give",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/capabilities/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "capabilities",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Appoint a Vice Principal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vice Principal\",\n  \"email\": \"vp@school.in\",\n  \"password\": \"VicePass#2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"vp_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Vice Principals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/?active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "active: true (default), false, or all."
+          }
+        },
+        {
+          "name": "One Vice Principal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/{{vp_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                "{{vp_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change a Vice Principal / reset password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/{{vp_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                "{{vp_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vice Principal Rao\",\n  \"password\": \"VicePass#2027\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a Vice Principal (inactive)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/{{vp_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                "{{vp_id}}",
+                ""
+              ]
+            },
+            "description": "They can no longer sign in and lose every permission they had."
+          }
+        },
+        {
+          "name": "Bring a Vice Principal back",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/vice-principal/{{vp_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "vice-principal",
+                "{{vp_id}}",
+                ""
+              ]
+            },
+            "description": "They come back with no permissions; give them again with the grants below.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List permission grants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/grants/?user_id={{vp_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "grants",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{vp_id}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Give the Vice Principal a permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/grants/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "grants",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{vp_id}}\",\n  \"capability\": \"manage_fees\",\n  \"reason\": \"Handles the fee desk\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"grant_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Take a permission back",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/grants/{{grant_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "grants",
+                "{{grant_id}}",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 School",
+      "description": "",
+      "item": [
+        {
+          "name": "School (name and season)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/school/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set name / season",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/school/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"school_name\": \"Shiksha Public School\",\n  \"active_season\": \"summer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Timings of both seasons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/school/timings/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "timings",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set summer timing and periods",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/school/timings/summer/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "timings",
+                "summer",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"opens_at\": \"07:30\",\n  \"closes_at\": \"13:30\",\n  \"periods\": [\n    {\n      \"name\": \"Period 1\",\n      \"starts_at\": \"07:45\",\n      \"ends_at\": \"08:25\"\n    },\n    {\n      \"name\": \"Period 2\",\n      \"starts_at\": \"08:25\",\n      \"ends_at\": \"09:05\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set winter timing and periods",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/school/timings/winter/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "timings",
+                "winter",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"opens_at\": \"08:30\",\n  \"closes_at\": \"14:00\",\n  \"periods\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List holidays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/school/holidays/?from={{today}}&to={{plus_30}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "holidays",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{plus_30}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a holiday",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/school/holidays/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "holidays",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Diwali\",\n  \"starts_on\": \"{{plus_7}}\",\n  \"ends_on\": \"{{plus_8}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"holiday_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change a holiday",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/school/holidays/{{holiday_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "holidays",
+                "{{holiday_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Diwali break\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a holiday",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/school/holidays/{{holiday_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "school",
+                "holidays",
+                "{{holiday_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List notices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notices/?kind=notice&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "kind",
+                  "value": "notice",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Post a notice or announcement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notices/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"notice\",\n  \"title\": \"PTM on Saturday\",\n  \"body\": \"Parents meet teachers at 10 am.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"notice_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw a notice",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notices/{{notice_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices",
+                "{{notice_id}}",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 Classes and students",
+      "description": "",
+      "item": [
+        {
+          "name": "List classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes/?active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a class (no section)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classes/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                ""
+              ]
+            },
+            "description": "level: nursery, lkg, ukg, 1 to 8. The section is optional: leave it out (or send \"\" or null) and the class is just \"5\".",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level\": \"5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"class_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add a class with a section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classes/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level\": \"5\",\n  \"section\": \"A\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"class_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "One class",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes/{{class_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                "{{class_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change a class (add or change the section)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classes/{{class_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                "{{class_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section\": \"B\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change a class (remove the section)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classes/{{class_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                "{{class_id}}",
+                ""
+              ]
+            },
+            "description": "null or \"\" removes the section. Leaving `section` out keeps it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a class (inactive)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/classes/{{class_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classes",
+                "{{class_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/students/?class_id={{class_id}}&query=kab&active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "query",
+                  "value": "kab",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kabir Singh\",\n  \"roll_number\": \"1\",\n  \"class_id\": \"{{class_id}}\",\n  \"guardian_name\": \"Ajay Singh\",\n  \"uses_van\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"student_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "One student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change a student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guardian_name\": \"Ajay K Singh\",\n  \"uses_van\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a student (inactive)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restore a student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Student's results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/results/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                "results",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 Dress, books and fees",
+      "description": "",
+      "item": [
+        {
+          "name": "List items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accessories/items/?kind=dress&class_id={{class_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "items",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "kind",
+                  "value": "dress",
+                  "disabled": true
+                },
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add an item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accessories/items/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "items",
+                ""
+              ]
+            },
+            "description": "kind: dress or books. class_id null means every class.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"dress\",\n  \"name\": \"Shirt\",\n  \"price\": \"350.00\",\n  \"class_id\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"item_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change an item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accessories/items/{{item_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "items",
+                "{{item_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": \"400.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove an item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accessories/items/{{item_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "items",
+                "{{item_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sell an item to a student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accessories/issues/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "issues",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"{{student_id}}\",\n  \"item_id\": \"{{item_id}}\",\n  \"quantity\": 2,\n  \"issued_on\": \"{{today}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sales list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accessories/issues/?student_id={{student_id}}&kind=dress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accessories",
+                "issues",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "student_id",
+                  "value": "{{student_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "kind",
+                  "value": "dress",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fees of a class",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fees/structure/?class_id={{class_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "structure",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set tuition for a class",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fees/structure/{{class_id}}/tuition/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "structure",
+                "{{class_id}}",
+                "tuition",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"2000.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set van fee for a class",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fees/structure/{{class_id}}/van/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "structure",
+                "{{class_id}}",
+                "van",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"500.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Fee accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fees/accounts/?class_id={{class_id}}&only_due=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "accounts",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "only_due",
+                  "value": "true",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "A student's fees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}/fees/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "students",
+                "{{student_id}}",
+                "fees",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Take a fee payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fees/payments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "payments",
+                ""
+              ]
+            },
+            "description": "head: tuition, van, dress, books.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"{{student_id}}\",\n  \"head\": \"tuition\",\n  \"amount\": \"500.00\",\n  \"paid_on\": \"{{today}}\",\n  \"note\": \"First instalment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Fee payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fees/payments/?student_id={{student_id}}&from={{today}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees",
+                "payments",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "student_id",
+                  "value": "{{student_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 Teachers, classes given, lessons",
+      "description": "",
+      "item": [
+        {
+          "name": "List teachers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teachers/?active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teachers",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a teacher (gets a login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teachers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teachers",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha Sharma\",\n  \"email\": \"asha@school.in\",\n  \"password\": \"TeachPass#2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"teacher_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "One teacher",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teachers/{{teacher_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teachers",
+                "{{teacher_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change a teacher / reset password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teachers/{{teacher_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teachers",
+                "{{teacher_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha S. Sharma\",\n  \"password\": \"NewTeach#2027\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a teacher (inactive)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teachers/{{teacher_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teachers",
+                "{{teacher_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List class and subject given to teachers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teaching/allotments/?teacher_id={{teacher_id}}&class_id={{class_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "allotments",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "teacher_id",
+                  "value": "{{teacher_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Give a teacher a class and subject",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teaching/allotments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "allotments",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacher_id\": \"{{teacher_id}}\",\n  \"class_id\": \"{{class_id}}\",\n  \"subject\": \"Maths\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"allotment_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Take it back",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teaching/allotments/{{allotment_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "allotments",
+                "{{allotment_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lessons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teaching/lessons/?teacher_id={{teacher_id}}&class_id={{class_id}}&from={{today}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "lessons",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "teacher_id",
+                  "value": "{{teacher_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record today's lesson (teacher)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teaching/lessons/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "lessons",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allotment_id\": \"{{allotment_id}}\",\n  \"topic\": \"Fractions: adding unlike denominators\",\n  \"taught_on\": \"{{today}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"lesson_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change my lesson (teacher)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teaching/lessons/{{lesson_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "lessons",
+                "{{lesson_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Fractions, worked examples\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Lesson board (recorded or pending)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teaching/lessons/board/?day={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "teaching",
+                "lessons",
+                "board",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "day",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 Staff, vans, fuel bills",
+      "description": "",
+      "item": [
+        {
+          "name": "List staff",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/?active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a staff member (gets a login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/staff/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"email\": \"ravi@school.in\",\n  \"password\": \"StaffPass#2026\",\n  \"job_title\": \"Driver\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"staff_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "One staff member",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/{{staff_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "{{staff_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change staff / reset password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/staff/{{staff_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "{{staff_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_title\": \"Senior driver\",\n  \"password\": \"NewStaff#2027\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove staff (inactive)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/staff/{{staff_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "staff",
+                "{{staff_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List vans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vans/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vans",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a van with a driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vans/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vans",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Van 1\",\n  \"driver_id\": \"{{staff_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"van_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change a van / change driver",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vans/{{van_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vans",
+                "{{van_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Van 1 (north)\",\n  \"driver_id\": \"{{staff_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a van",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vans/{{van_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vans",
+                "{{van_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List fuel bills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fuel-bills/?van_id={{van_id}}&status=pending&from={{today}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fuel-bills",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "van_id",
+                  "value": "{{van_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Submit a fuel bill (driver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fuel-bills/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fuel-bills",
+                ""
+              ]
+            },
+            "description": "A driver leaves van_id null. The Principal must give van_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"van_id\": null,\n  \"billed_on\": \"{{today}}\",\n  \"fuel\": \"petrol\",\n  \"litres\": \"20.00\",\n  \"rate\": \"100.00\",\n  \"odometer_km\": 10300\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"bill_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw my pending bill",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fuel-bills/{{bill_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fuel-bills",
+                "{{bill_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve a bill",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fuel-bills/{{bill_id}}/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fuel-bills",
+                "{{bill_id}}",
+                "approve",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject a bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fuel-bills/{{bill_id}}/reject/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fuel-bills",
+                "{{bill_id}}",
+                "reject",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Rate does not match the receipt\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 Attendance",
+      "description": "",
+      "item": [
+        {
+          "name": "Class roster for a day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/students/?class_id={{class_id}}&day={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "students",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "day",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark a class",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/students/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "students",
+                ""
+              ]
+            },
+            "description": "status: present, absent, late. A teacher marks today only; the Principal can fix past days.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"class_id\": \"{{class_id}}\",\n  \"day\": \"{{today}}\",\n  \"marks\": [\n    {\n      \"student_id\": \"{{student_id}}\",\n      \"status\": \"present\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Class report between dates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/students/report/?class_id={{class_id}}&from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "students",
+                "report",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check in (teacher / staff / Vice Principal)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/check-in/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "check-in",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check out",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/check-out/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "check-out",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "My days",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/me/?from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "me",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Board: everyone for a day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/people/?day={{today}}&role=teacher",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "people",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "day",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "role",
+                  "value": "teacher",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Records of one person",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/records/?person_id={{teacher_id}}&from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "records",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "person_id",
+                  "value": "{{teacher_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fix a missed check-in / check-out",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/records/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "records",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person_id\": \"{{teacher_id}}\",\n  \"day\": \"{{today}}\",\n  \"checked_in_at\": \"09:00\",\n  \"checked_out_at\": \"15:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 Leaves and meetings",
+      "description": "",
+      "item": [
+        {
+          "name": "My requests (Principal: everyone's)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/requests/?kind=leave&status=pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "kind",
+                  "value": "leave",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": true
+                },
+                {
+                  "key": "requester_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ask for leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/requests/leaves/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "leaves",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"starts_on\": \"{{plus_1}}\",\n  \"ends_on\": \"{{plus_3}}\",\n  \"reason\": \"Fever\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"request_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ask for a meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/requests/meetings/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "meetings",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Timetable change\",\n  \"details\": \"Need to discuss period swaps\",\n  \"preferred_on\": \"{{plus_1}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"request_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw my pending request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/requests/{{request_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "{{request_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve a leave",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/requests/{{request_id}}/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "{{request_id}}",
+                "approve",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve a meeting (fix day and time)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/requests/{{request_id}}/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "{{request_id}}",
+                "approve",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meeting_on\": \"{{plus_1}}\",\n  \"meeting_at\": \"10:30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reject a request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/requests/{{request_id}}/reject/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "requests",
+                "{{request_id}}",
+                "reject",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Exams that day\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9 Exams",
+      "description": "",
+      "item": [
+        {
+          "name": "List exams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/?class_id={{class_id}}&type=unit_test&from={{minus_30}}&to={{plus_30}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "type",
+                  "value": "unit_test",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{plus_30}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Schedule an exam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/exams/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                ""
+              ]
+            },
+            "description": "exam_type: unit_test, mid_term, annual. The class and subject need a teacher first.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exam_type\": \"unit_test\",\n  \"class_id\": \"{{class_id}}\",\n  \"subject\": \"Maths\",\n  \"held_on\": \"{{today}}\",\n  \"max_marks\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"exam_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Move / change an exam",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"held_on\": \"{{plus_7}}\",\n  \"max_marks\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancel an exam",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enter marks (teacher)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/marks/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "marks",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": [\n    {\n      \"student_id\": \"{{student_id}}\",\n      \"marks\": 8,\n      \"absent\": false\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Exam results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/marks/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "marks",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Question bank: my units",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/?class_id={{class_id}}&subject=Maths",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "teacher_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "class_id",
+                  "value": "{{class_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "subject",
+                  "value": "Maths",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Question bank: add a unit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"class_id\": \"{{class_id}}\",\n  \"subject\": \"Maths\",\n  \"name\": \"Unit 1: Fractions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"unit_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Question bank: rename a unit",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/{{unit_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                "{{unit_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Unit 1: Fractions and decimals\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Question bank: remove a unit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/{{unit_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                "{{unit_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Questions of a unit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/{{unit_id}}/questions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                "{{unit_id}}",
+                "questions",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add a question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/question-bank/units/{{unit_id}}/questions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "units",
+                "{{unit_id}}",
+                "questions",
+                ""
+              ]
+            },
+            "description": "question_type: mcq, short, long.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"What is 1/2 + 1/4?\",\n  \"marks\": 2,\n  \"question_type\": \"short\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code < 300) {",
+                  "  if (body.id !== undefined) pm.collectionVariables.set(\"question_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change a question",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/question-bank/questions/{{question_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "questions",
+                "{{question_id}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove a question",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/question-bank/questions/{{question_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "question-bank",
+                "questions",
+                "{{question_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paper of an exam",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/paper/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "paper",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build the paper from the bank",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/paper/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "paper",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question_ids\": [\n    \"{{question_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Send the paper to the Principal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/paper/send/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "paper",
+                "send",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve the paper",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/paper/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "paper",
+                "approve",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject the paper",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/exams/{{exam_id}}/paper/reject/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "{{exam_id}}",
+                "paper",
+                "reject",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Question 2 is too easy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Papers waiting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/exams/papers/?status=sent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "exams",
+                "papers",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "sent",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Salaries and payments",
+      "description": "",
+      "item": [
+        {
+          "name": "Who can be paid, and what they are owed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments/people/?role=teacher&active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "people",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "teacher",
+                  "disabled": true
+                },
+                {
+                  "key": "query",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "One person's account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments/people/{{teacher_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "people",
+                "{{teacher_id}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Salary history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments/people/{{teacher_id}}/salary/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "people",
+                "{{teacher_id}}",
+                "salary",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set a monthly salary",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/people/{{teacher_id}}/salary/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "people",
+                "{{teacher_id}}",
+                "salary",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"30000.00\",\n  \"effective_from\": \"{{this_month}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pay a month's salary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                ""
+              ]
+            },
+            "description": "mode: cash, bank, upi.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person_id\": \"{{teacher_id}}\",\n  \"kind\": \"salary\",\n  \"amount\": \"10000.00\",\n  \"mode\": \"cash\",\n  \"month\": \"{{this_month}}\",\n  \"paid_on\": \"{{today}}\",\n  \"note\": \"First part\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pay an approved fuel bill (staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person_id\": \"{{staff_id}}\",\n  \"kind\": \"fuel_bill\",\n  \"amount\": \"400.00\",\n  \"mode\": \"upi\",\n  \"fuel_bill_id\": \"{{bill_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Payments list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments/?person_id={{teacher_id}}&from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "person_id",
+                  "value": "{{teacher_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My own account (teacher / staff)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "me",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Analytics (graphs)",
+      "description": "",
+      "item": [
+        {
+          "name": "Student attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/students/attendance/?from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "students",
+                "attendance",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "class_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fees collected and owed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/students/fees/?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "students",
+                "fees",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Exam averages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/students/exams/?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "students",
+                "exams",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "class_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Teacher and staff attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/staff/attendance/?from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "staff",
+                "attendance",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                },
+                {
+                  "key": "role",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Payments paid and owed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/staff/payments/?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "staff",
+                "payments",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fuel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/staff/fuel/?",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "staff",
+                "fuel",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "van_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lessons recorded",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/teachers/lessons/?from={{minus_30}}&to={{today}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "teachers",
+                "lessons",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{minus_30}}",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
