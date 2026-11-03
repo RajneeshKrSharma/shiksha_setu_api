@@ -296,7 +296,6 @@ and the extra lines in `requirements.txt` (gunicorn, whitenoise, psycopg).
    - `FIELD_ENCRYPTION_KEY` the same key you use now (data already encrypted needs it)
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (reference to the database service)
    - `CORS_ALLOWED_ORIGINS` the app's web address(es), no trailing slash
-   - `GEMINI_API_KEY` for the handwriting reader (optional)
 4. Settings > Networking > **Generate Domain**. The app reads that name from
    `RAILWAY_PUBLIC_DOMAIN` by itself, so no host variable is needed.
 5. Each deploy runs `migrate` and `collectstatic`, then starts gunicorn. Railway's health check calls

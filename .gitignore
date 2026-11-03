@@ -7,3 +7,5 @@ __pycache__/
 backups/
 .idea/
 .DS_Store
+.neon
+node_modules/

@@ -34,7 +34,7 @@ class Locked(DomainError):
 
 
 class ExternalServiceError(DomainError):
-    """A service we depend on (such as the handwriting reader) failed."""
+    """A service outside this server that we depend on failed."""
 
     code = "service_unavailable"
     default_message = "A service this action needs is not available. Try again."

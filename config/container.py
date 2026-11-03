@@ -198,11 +198,6 @@ from apps.students.domain.usecases.students import (
     UpdateStudent,
 )
 
-from apps.handwriting.data.gemini_reader import GeminiHandwritingReader
-from apps.handwriting.domain.usecases.read_handwriting import (
-    ReadHandwriting,
-    ReadHandwritingWithoutSignIn,
-)
 
 
 class Container:
@@ -735,16 +730,6 @@ class Container:
         return CorrectWorkAttendance(DjangoWorkAttendanceRepository(), self.users(),
                                      self._school_hours(), self.authorizer(), self._audit,
                                      self._clock)
-
-    def read_handwriting(self) -> ReadHandwriting:
-        reader = GeminiHandwritingReader(settings.GEMINI_API_KEY, settings.GEMINI_MODELS,
-                                         settings.GEMINI_TIMEOUT)
-        return ReadHandwriting(reader, self.authorizer())
-
-    def read_handwriting_without_sign_in(self) -> ReadHandwritingWithoutSignIn:
-        reader = GeminiHandwritingReader(settings.GEMINI_API_KEY, settings.GEMINI_MODELS,
-                                         settings.GEMINI_TIMEOUT)
-        return ReadHandwritingWithoutSignIn(reader, self.authorizer())
 
 
 container = Container()

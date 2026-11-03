@@ -2,7 +2,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from dotenv import load_dotenv
 
@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     "apps.exams",
     "apps.payments",
     "apps.analytics",
-    "apps.handwriting",
 ]
 
 MIDDLEWARE = [
@@ -112,6 +111,9 @@ if DATABASE_URL:
             "HOST": _u.hostname or "",
             "PORT": str(_u.port or ""),
             "CONN_MAX_AGE": 60,
+            # Neon requires SSL; its pooled host is pgbouncer (no server-side cursors).
+            "OPTIONS": {"sslmode": parse_qs(_u.query).get("sslmode", ["require"])[0]},
+            "DISABLE_SERVER_SIDE_CURSORS": True,
         }
     }
 elif DB_ENGINE == "sqlite":
@@ -201,12 +203,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# --- Handwriting reader (Gemini) ---
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-# Models are tried in this order, comma separated; the next one is used when one is busy or slow.
-GEMINI_MODELS = [m.strip() for m in os.environ.get("GEMINI_MODEL", "gemini-3.6-flash,gemini-3.5-flash").split(",") if m.strip()]
-GEMINI_TIMEOUT = int(os.environ.get("GEMINI_TIMEOUT", "25"))  # seconds, per try
 
 # --- Sign-in ---
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["auth"] = "10/min"
