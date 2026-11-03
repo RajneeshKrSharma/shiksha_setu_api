@@ -9,3 +9,4 @@ backups/
 .DS_Store
 .neon
 node_modules/
+.env.render
