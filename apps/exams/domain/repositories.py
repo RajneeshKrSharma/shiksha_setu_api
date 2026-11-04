@@ -9,6 +9,7 @@ from apps.core.domain.repository import Repository
 from .entities import (
     Exam,
     ExamMark,
+    ExamSettings,
     ExamType,
     Paper,
     PaperStatus,
@@ -17,7 +18,20 @@ from .entities import (
 )
 
 
+class ExamSettingsRepository(ABC):
+    @abstractmethod
+    def get(self) -> ExamSettings:
+        """The school's timetable settings; the starting values until the Principal saves."""
+
+    @abstractmethod
+    def save(self, settings: ExamSettings) -> ExamSettings: ...
+
+
 class ExamRepository(Repository[Exam]):
+    @abstractmethod
+    def add_many(self, exams: list[Exam]) -> list[Exam]:
+        """Adds all of them or, if any fails, none."""
+
     @abstractmethod
     def list(self, *, class_ids: frozenset[UUID] | None = None, class_id: UUID | None = None,
              exam_type: ExamType | None = None, from_date: date | None = None,

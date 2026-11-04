@@ -76,6 +76,7 @@ from apps.attendance.domain.usecases.work import (
 )
 from apps.exams.data.repositories import (
     DjangoExamRepository,
+    DjangoExamSettingsRepository,
     DjangoMarkRepository,
     DjangoPaperRepository,
     DjangoQuestionRepository,
@@ -103,6 +104,11 @@ from apps.exams.domain.usecases.papers import (
     SendPaper,
 )
 from apps.exams.domain.usecases.results import GetExamResults, GetStudentResults
+from apps.exams.domain.usecases.timetable import (
+    GetExamSettings,
+    ScheduleTimetable,
+    UpdateExamSettings,
+)
 from apps.payments.data.repositories import DjangoPaymentRepository, DjangoSalaryRepository
 from apps.payments.domain.policies import PayableKinds, PayeePolicies
 from apps.payments.domain.services import PayeeAccess
@@ -565,6 +571,18 @@ class Container:
         return ScheduleExam(DjangoExamRepository(), DjangoPaperRepository(), self._exam_scope(),
                             self.authorizer(), DjangoClassRepository(), DjangoAllotmentRepository(),
                             self._audit)
+
+    def schedule_timetable(self) -> ScheduleTimetable:
+        return ScheduleTimetable(DjangoExamRepository(), DjangoPaperRepository(),
+                                 self._exam_scope(), DjangoExamSettingsRepository(),
+                                 self.authorizer(), DjangoClassRepository(),
+                                 DjangoAllotmentRepository(), self._audit)
+
+    def get_exam_settings(self) -> GetExamSettings:
+        return GetExamSettings(DjangoExamSettingsRepository(), self.authorizer())
+
+    def update_exam_settings(self) -> UpdateExamSettings:
+        return UpdateExamSettings(DjangoExamSettingsRepository(), self.authorizer(), self._audit)
 
     def update_exam(self) -> UpdateExam:
         return UpdateExam(DjangoExamRepository(), DjangoPaperRepository(), self._exam_scope(),

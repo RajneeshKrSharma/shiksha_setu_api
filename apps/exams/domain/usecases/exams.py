@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from uuid import UUID
 
 from apps.accounts.domain.capabilities import CONDUCT_EXAMS, SCHEDULE_EXAMS
@@ -65,7 +65,8 @@ class ScheduleExam(_ExamUseCase):
         self._audit = audit
 
     def call(self, actor: UserAccount, *, exam_type: ExamType, class_id: UUID, subject: str,
-             held_on: date, max_marks: int) -> ExamLine:
+             held_on: date, max_marks: int, starts_at: time | None = None,
+             duration_minutes: int | None = None) -> ExamLine:
         self._authorizer.require(actor, SCHEDULE_EXAMS)
         school_class = self._classes.get(class_id)
         if school_class is None or not school_class.is_active:
@@ -77,7 +78,8 @@ class ScheduleExam(_ExamUseCase):
             raise RuleViolation(message, errors={"subject": [message]})
 
         exam = Exam.schedule(exam_type=exam_type, class_id=class_id, subject=holder.subject,
-                             held_on=held_on, max_marks=max_marks)
+                             held_on=held_on, max_marks=max_marks, starts_at=starts_at,
+                             duration_minutes=duration_minutes)
         self._ensure_free(exam)
         saved = self._exams.add(exam)
         self._audit.record(actor.id, "exam_scheduled", f"class:{class_id}", {
@@ -91,7 +93,7 @@ class UpdateExam(_ExamUseCase):
     """Moves an exam or changes its type or total. The total cannot change once marks are
     entered or the paper has been sent."""
 
-    ALLOWED = {"exam_type", "held_on", "max_marks"}
+    ALLOWED = {"exam_type", "held_on", "max_marks", "starts_at", "duration_minutes"}
 
     def __init__(self, exams: ExamRepository, papers: PaperRepository, scope: ExamScope,
                  authorizer: Authorizer, marks: MarkRepository, audit: AuditLogger):
@@ -114,7 +116,9 @@ class UpdateExam(_ExamUseCase):
                 raise RuleViolation("The paper is already sent, so the total cannot change.",
                                     errors={"max_marks": ["Paper already sent."]})
         exam.change(exam_type=changes.get("exam_type", exam.exam_type),
-                    held_on=changes.get("held_on", exam.held_on), max_marks=new_max)
+                    held_on=changes.get("held_on", exam.held_on), max_marks=new_max,
+                    starts_at=changes.get("starts_at", exam.starts_at),
+                    duration_minutes=changes.get("duration_minutes", exam.duration_minutes))
         self._ensure_free(exam)
         saved = self._exams.update(exam)
         self._audit.record(actor.id, "exam_updated", f"exam:{saved.id}", {

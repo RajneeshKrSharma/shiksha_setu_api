@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, time
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from uuid import UUID
@@ -39,25 +39,96 @@ class Exam(Entity):
     max_marks: int
     is_active: bool = True
     class_name: str = ""
+    # When the paper starts and how long it runs; both optional.
+    starts_at: time | None = None
+    duration_minutes: int | None = None
 
     @classmethod
     def schedule(cls, *, exam_type: ExamType, class_id: UUID, subject: str, held_on: date,
-                 max_marks: int) -> "Exam":
+                 max_marks: int, starts_at: time | None = None,
+                 duration_minutes: int | None = None) -> "Exam":
         exam = cls(exam_type=exam_type, class_id=class_id, subject=subject, held_on=held_on,
                    max_marks=1)
-        exam.change(exam_type=exam_type, held_on=held_on, max_marks=max_marks)
+        exam.change(exam_type=exam_type, held_on=held_on, max_marks=max_marks,
+                    starts_at=starts_at, duration_minutes=duration_minutes)
         return exam
 
-    def change(self, *, exam_type: ExamType, held_on: date, max_marks: int) -> None:
+    def change(self, *, exam_type: ExamType, held_on: date, max_marks: int,
+               starts_at: time | None = None, duration_minutes: int | None = None) -> None:
         if not 1 <= max_marks <= self.MAX_MARKS_LIMIT:
             raise _invalid("max_marks", f"Between 1 and {self.MAX_MARKS_LIMIT}.")
+        if duration_minutes is not None and duration_minutes < 1:
+            raise _invalid("duration_minutes", "Must be at least 1 minute.")
         self.exam_type, self.held_on, self.max_marks = exam_type, held_on, max_marks
+        self.starts_at, self.duration_minutes = starts_at, duration_minutes
 
     def cancel(self) -> None:
         self.is_active = False
 
     def has_been_held(self, today: date) -> bool:
         return self.held_on <= today
+
+
+# ------------------------------------------------- exam timetable settings
+class SameDayRule(StrEnum):
+    """What to do when a class would sit two papers on one day."""
+
+    ALLOW = "allow"
+    WARN = "warn"
+    BLOCK = "block"
+
+
+@dataclass(eq=False, kw_only=True)
+class ExamSettings:
+    """How the Principal wants exam timetables made. One set for the whole school; every
+    value can be changed, and the starting values stop nothing."""
+
+    DEFAULT_TYPE_LABELS = {
+        ExamType.UNIT_TEST: "Unit Test",
+        ExamType.MID_TERM: "Half Yearly",
+        ExamType.ANNUAL: "Annual",
+    }
+
+    default_max_marks: int = 50
+    default_duration_minutes: int = 180
+    default_start_time: time | None = None
+    show_time: bool = True
+    same_day_rule: SameDayRule = SameDayRule.WARN
+    min_gap_days: int = 0
+    off_weekdays: list[int] = field(default_factory=lambda: [6])  # Monday is 0, Sunday 6
+    off_dates: list[date] = field(default_factory=list)
+    type_labels: dict[ExamType, str] = field(
+        default_factory=lambda: dict(ExamSettings.DEFAULT_TYPE_LABELS)
+    )
+
+    def change(self, *, default_max_marks: int, default_duration_minutes: int,
+               default_start_time: time | None, show_time: bool, same_day_rule: SameDayRule,
+               min_gap_days: int, off_weekdays: list[int], off_dates: list[date],
+               type_labels: dict[ExamType, str]) -> None:
+        if not 1 <= default_max_marks <= Exam.MAX_MARKS_LIMIT:
+            raise _invalid("default_max_marks", f"Between 1 and {Exam.MAX_MARKS_LIMIT}.")
+        if default_duration_minutes < 1:
+            raise _invalid("default_duration_minutes", "Must be at least 1 minute.")
+        if min_gap_days < 0:
+            raise _invalid("min_gap_days", "Cannot be below 0.")
+        if any(not 0 <= d <= 6 for d in off_weekdays):
+            raise _invalid("off_weekdays", "Days are 0 (Monday) to 6 (Sunday).")
+        labels = {}
+        for exam_type in ExamType:
+            label = (type_labels.get(exam_type) or "").strip()
+            labels[exam_type] = label or self.DEFAULT_TYPE_LABELS[exam_type]
+            if len(labels[exam_type]) > 40:
+                raise _invalid("type_labels", "Names can be up to 40 letters.")
+        self.default_max_marks = default_max_marks
+        self.default_duration_minutes = default_duration_minutes
+        self.default_start_time, self.show_time = default_start_time, show_time
+        self.same_day_rule, self.min_gap_days = same_day_rule, min_gap_days
+        self.off_weekdays = sorted(set(off_weekdays))
+        self.off_dates = sorted(set(off_dates))
+        self.type_labels = labels
+
+    def is_off_day(self, day: date) -> bool:
+        return day.weekday() in self.off_weekdays or day in self.off_dates
 
 
 # ---------------------------------------------------------- question bank

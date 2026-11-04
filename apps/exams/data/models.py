@@ -4,7 +4,7 @@ from django.db.models.functions import Lower
 
 from apps.core.data.base_model import BaseModel
 
-from ..domain.entities import ExamType, PaperStatus, QuestionType
+from ..domain.entities import ExamType, PaperStatus, QuestionType, SameDayRule
 
 TYPE_CHOICES = [(t.value, t.value.replace("_", " ").title()) for t in ExamType]
 QUESTION_TYPE_CHOICES = [(t.value, t.value.upper() if t.value == "mcq" else t.value.title())
@@ -20,6 +20,8 @@ class Exam(BaseModel):
     subject = models.CharField(max_length=60)
     held_on = models.DateField(db_index=True)
     max_marks = models.PositiveSmallIntegerField()
+    starts_at = models.TimeField(null=True, blank=True)
+    duration_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["held_on", "subject"]
@@ -29,6 +31,23 @@ class Exam(BaseModel):
                 condition=models.Q(is_active=True), name="one_active_exam_per_class_subject_day",
             )
         ]
+
+
+class ExamSettings(BaseModel):
+    """One row for the whole school: how the Principal wants exam timetables made."""
+
+    default_max_marks = models.PositiveSmallIntegerField(default=50)
+    default_duration_minutes = models.PositiveSmallIntegerField(default=180)
+    default_start_time = models.TimeField(null=True, blank=True)
+    show_time = models.BooleanField(default=True)
+    same_day_rule = models.CharField(
+        max_length=5, default=SameDayRule.WARN.value,
+        choices=[(r.value, r.value.title()) for r in SameDayRule],
+    )
+    min_gap_days = models.PositiveSmallIntegerField(default=0)
+    off_weekdays = models.JSONField(default=list)
+    off_dates = models.JSONField(default=list)
+    type_labels = models.JSONField(default=dict)
 
 
 class QuestionUnit(BaseModel):

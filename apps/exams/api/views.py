@@ -12,13 +12,18 @@ from apps.accounts.domain.capabilities import (
 from apps.core.api.query import QueryParams
 from config.container import container
 
-from ..domain.entities import ExamType, PaperStatus, QuestionType
+from ..domain.entities import ExamType, PaperStatus, QuestionType, SameDayRule
 from ..domain.usecases.marks import MarkEntry
+from ..domain.usecases.timetable import TimetableEntry
 from .serializers import (
     ExamInput,
     ExamOut,
     ExamPatchInput,
     ExamResultsOut,
+    ExamSettingsInput,
+    ExamSettingsOut,
+    TimetableInput,
+    TimetableOut,
     MarksInput,
     PaperInput,
     PaperOut,
@@ -59,6 +64,39 @@ class ExamListCreateView(APIView):
         fields = dict(data.validated_data, exam_type=ExamType(data.validated_data["exam_type"]))
         return Response(ExamOut(container.schedule_exam().call(_actor(request), **fields)).data,
                         status=201)
+
+
+class TimetableView(APIView):
+    permission_classes = [CapabilityGate.of(read=(), write=(SCHEDULE_EXAMS,))]
+
+    def post(self, request):
+        data = TimetableInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        body = data.validated_data
+        result = container.schedule_timetable().call(
+            _actor(request), exam_type=ExamType(body["exam_type"]), class_id=body["class_id"],
+            entries=[TimetableEntry(**entry) for entry in body["entries"]],
+        )
+        return Response(TimetableOut(result).data, status=201)
+
+
+class ExamSettingsView(APIView):
+    permission_classes = [CapabilityGate.of(read=(SCHEDULE_EXAMS,), write=(SCHEDULE_EXAMS,))]
+
+    def get(self, request):
+        return Response(ExamSettingsOut(container.get_exam_settings().call(_actor(request))).data)
+
+    def put(self, request):
+        data = ExamSettingsInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = dict(
+            data.validated_data,
+            same_day_rule=SameDayRule(data.validated_data["same_day_rule"]),
+            type_labels={ExamType(k): v for k, v in data.validated_data["type_labels"].items()
+                         if k in {t.value for t in ExamType}},
+        )
+        saved = container.update_exam_settings().call(_actor(request), **values)
+        return Response(ExamSettingsOut(saved).data)
 
 
 class ExamDetailView(APIView):

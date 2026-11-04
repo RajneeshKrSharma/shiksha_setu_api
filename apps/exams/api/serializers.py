@@ -1,10 +1,23 @@
 from rest_framework import serializers
 
-from ..domain.entities import ExamResults, ExamType, Paper, QuestionType, StudentResults
+from ..domain.entities import (
+    ExamResults,
+    ExamSettings,
+    ExamType,
+    Paper,
+    QuestionType,
+    SameDayRule,
+    StudentResults,
+)
 from ..domain.services import ExamLine
+from ..domain.usecases.timetable import TimetableResult
 
 _EXAM_TYPES = [t.value for t in ExamType]
 _QUESTION_TYPES = [t.value for t in QuestionType]
+
+
+def _hhmm(value) -> str | None:
+    return value.strftime("%H:%M") if value else None
 
 
 # ------------------------------------------------------------------ exams
@@ -14,12 +27,16 @@ class ExamInput(serializers.Serializer):
     subject = serializers.CharField(max_length=60)
     held_on = serializers.DateField()
     max_marks = serializers.IntegerField()
+    starts_at = serializers.TimeField(required=False, allow_null=True)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True)
 
 
 class ExamPatchInput(serializers.Serializer):
     exam_type = serializers.ChoiceField(required=False, choices=_EXAM_TYPES)
     held_on = serializers.DateField(required=False)
     max_marks = serializers.IntegerField(required=False)
+    starts_at = serializers.TimeField(required=False, allow_null=True)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True)
 
 
 class ExamOut(serializers.Serializer):
@@ -35,9 +52,58 @@ class ExamOut(serializers.Serializer):
             "subject": exam.subject,
             "held_on": exam.held_on.isoformat(),
             "max_marks": exam.max_marks,
+            "starts_at": _hhmm(exam.starts_at),
+            "duration_minutes": exam.duration_minutes,
             "teacher_id": str(line.teacher_id) if line.teacher_id else None,
             "teacher_name": line.teacher_name,
             "paper_status": line.paper_status.value if line.paper_status else None,
+        }
+
+
+# ---------------------------------------------------- timetable and settings
+class TimetableEntryInput(serializers.Serializer):
+    subject = serializers.CharField(max_length=60)
+    held_on = serializers.DateField()
+    max_marks = serializers.IntegerField(required=False, allow_null=True)
+    starts_at = serializers.TimeField(required=False, allow_null=True)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True)
+
+
+class TimetableInput(serializers.Serializer):
+    exam_type = serializers.ChoiceField(choices=_EXAM_TYPES)
+    class_id = serializers.UUIDField()
+    entries = TimetableEntryInput(many=True)
+
+
+class TimetableOut(serializers.Serializer):
+    def to_representation(self, result: TimetableResult):
+        return {"exams": ExamOut(result.lines, many=True).data, "warnings": result.warnings}
+
+
+class ExamSettingsInput(serializers.Serializer):
+    default_max_marks = serializers.IntegerField()
+    default_duration_minutes = serializers.IntegerField()
+    default_start_time = serializers.TimeField(allow_null=True)
+    show_time = serializers.BooleanField()
+    same_day_rule = serializers.ChoiceField(choices=[r.value for r in SameDayRule])
+    min_gap_days = serializers.IntegerField()
+    off_weekdays = serializers.ListField(child=serializers.IntegerField())
+    off_dates = serializers.ListField(child=serializers.DateField())
+    type_labels = serializers.DictField(child=serializers.CharField(allow_blank=True))
+
+
+class ExamSettingsOut(serializers.Serializer):
+    def to_representation(self, settings: ExamSettings):
+        return {
+            "default_max_marks": settings.default_max_marks,
+            "default_duration_minutes": settings.default_duration_minutes,
+            "default_start_time": _hhmm(settings.default_start_time),
+            "show_time": settings.show_time,
+            "same_day_rule": settings.same_day_rule.value,
+            "min_gap_days": settings.min_gap_days,
+            "off_weekdays": settings.off_weekdays,
+            "off_dates": [d.isoformat() for d in settings.off_dates],
+            "type_labels": {t.value: label for t, label in settings.type_labels.items()},
         }
 
 

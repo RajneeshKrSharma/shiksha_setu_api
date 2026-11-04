@@ -2,6 +2,7 @@
 from .data.models import (  # noqa: F401
     Exam,
     ExamMark,
+    ExamSettings,
     Paper,
     PaperItem,
     Question,

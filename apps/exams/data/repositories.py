@@ -10,7 +10,9 @@ from apps.students.domain.entities import ClassLevel, SchoolClass
 from ..domain.entities import (
     Exam,
     ExamMark,
+    ExamSettings,
     ExamType,
+    SameDayRule,
     Paper,
     PaperItem,
     PaperStatus,
@@ -20,6 +22,7 @@ from ..domain.entities import (
 )
 from ..domain.repositories import (
     ExamRepository,
+    ExamSettingsRepository,
     MarkRepository,
     PaperRepository,
     QuestionRepository,
@@ -40,15 +43,22 @@ class DjangoExamRepository(ExamRepository):
     def add(self, exam: Exam) -> Exam:
         row = rows.Exam.objects.create(
             exam_type=exam.exam_type.value, school_class_id=exam.class_id, subject=exam.subject,
-            held_on=exam.held_on, max_marks=exam.max_marks,
+            held_on=exam.held_on, max_marks=exam.max_marks, starts_at=exam.starts_at,
+            duration_minutes=exam.duration_minutes,
         )
         return self.get(row.pk)
+
+    def add_many(self, exams: list[Exam]) -> list[Exam]:
+        with transaction.atomic():
+            return [self.add(exam) for exam in exams]
 
     def update(self, exam: Exam) -> Exam:
         row = rows.Exam.objects.get(pk=exam.id)
         row.exam_type, row.held_on = exam.exam_type.value, exam.held_on
         row.max_marks, row.is_active = exam.max_marks, exam.is_active
-        row.save(update_fields=["exam_type", "held_on", "max_marks", "is_active", "updated_at"])
+        row.starts_at, row.duration_minutes = exam.starts_at, exam.duration_minutes
+        row.save(update_fields=["exam_type", "held_on", "max_marks", "is_active", "starts_at",
+                                "duration_minutes", "updated_at"])
         return self.get(row.pk)
 
     def list(self, *, class_ids: frozenset[UUID] | None = None, class_id: UUID | None = None,
@@ -85,6 +95,38 @@ class DjangoExamRepository(ExamRepository):
             id=row.pk, exam_type=ExamType(row.exam_type), class_id=row.school_class_id,
             subject=row.subject, held_on=row.held_on, max_marks=row.max_marks,
             is_active=row.is_active, class_name=_class_name(row.school_class),
+            starts_at=row.starts_at, duration_minutes=row.duration_minutes,
+        )
+
+
+class DjangoExamSettingsRepository(ExamSettingsRepository):
+    def get(self) -> ExamSettings:
+        row = rows.ExamSettings.objects.first()
+        return self._entity(row) if row else ExamSettings()
+
+    def save(self, settings: ExamSettings) -> ExamSettings:
+        row = rows.ExamSettings.objects.first() or rows.ExamSettings()
+        row.default_max_marks = settings.default_max_marks
+        row.default_duration_minutes = settings.default_duration_minutes
+        row.default_start_time, row.show_time = settings.default_start_time, settings.show_time
+        row.same_day_rule, row.min_gap_days = settings.same_day_rule.value, settings.min_gap_days
+        row.off_weekdays = list(settings.off_weekdays)
+        row.off_dates = [d.isoformat() for d in settings.off_dates]
+        row.type_labels = {t.value: label for t, label in settings.type_labels.items()}
+        row.save()
+        return self.get()
+
+    @staticmethod
+    def _entity(row: rows.ExamSettings) -> ExamSettings:
+        labels = dict(ExamSettings.DEFAULT_TYPE_LABELS)
+        labels.update({ExamType(k): v for k, v in row.type_labels.items()})
+        return ExamSettings(
+            default_max_marks=row.default_max_marks,
+            default_duration_minutes=row.default_duration_minutes,
+            default_start_time=row.default_start_time, show_time=row.show_time,
+            same_day_rule=SameDayRule(row.same_day_rule), min_gap_days=row.min_gap_days,
+            off_weekdays=list(row.off_weekdays),
+            off_dates=[date.fromisoformat(d) for d in row.off_dates], type_labels=labels,
         )
 
 
