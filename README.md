@@ -59,8 +59,9 @@ graph covers the last 30 days (at most 92) and a monthly graph the last 6 months
 
 ## Exams
 - The Principal schedules an exam: type (unit test, mid term, annual), class, subject, day and
-  total marks. The class and subject must already have a teacher (allotment), who conducts
-  it; the subject takes the spelling of the allotment. Marks are whole numbers.
+  total marks. A single exam needs a teacher for the class and subject (allotment), who conducts
+  it. A class timetable does not involve teachers at all: the Principal alone types the subjects
+  and dates. Marks are whole numbers.
 - Question bank: each teacher has their own, split into units per class and subject they
   take. A question has text, marks and a type (mcq, short, long). Only the owner changes a
   bank; the Principal can read every bank.

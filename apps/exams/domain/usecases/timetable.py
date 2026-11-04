@@ -122,25 +122,25 @@ class ScheduleTimetable(UseCase):
                 problems.append(f"{name}: listed twice.")
                 continue
             seen.add(name.lower())
-            holder = self._allotments.find_active(class_id, name)
-            if holder is None:
-                problems.append(f"{name}: no teacher takes this subject. Allot one first.")
+            if not name:
+                problems.append("A subject has no name.")
                 continue
+            subject = name
             if settings.is_off_day(entry.held_on):
-                problems.append(f"{holder.subject}: {entry.held_on:%d %b %Y} is a holiday.")
+                problems.append(f"{subject}: {entry.held_on:%d %b %Y} is a holiday.")
                 continue
-            if self._exams.find_same(class_id, holder.subject, exam_type, entry.held_on):
-                problems.append(f"{holder.subject}: already scheduled on that day.")
+            if self._exams.find_same(class_id, subject, exam_type, entry.held_on):
+                problems.append(f"{subject}: already scheduled on that day.")
                 continue
             try:
                 exams.append(Exam.schedule(
-                    exam_type=exam_type, class_id=class_id, subject=holder.subject,
+                    exam_type=exam_type, class_id=class_id, subject=subject,
                     held_on=entry.held_on, max_marks=entry.max_marks or settings.default_max_marks,
                     starts_at=self._start(entry, settings),
                     duration_minutes=self._duration(entry, settings),
                 ))
             except RuleViolation as error:
-                problems.append(f"{holder.subject}: {error.message}")
+                problems.append(f"{subject}: {error.message}")
         return exams
 
     @staticmethod
